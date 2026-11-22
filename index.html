@@ -17,21 +17,27 @@
             color: #e5e7eb;
             font-family: system-ui, sans-serif;
             min-height: 100vh;
-            padding: 20px;
+            overflow-x: hidden;
         }
 
         .app {
-            max-width: 900px;
-            margin: auto;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px;
+            padding-bottom: 150px;
         }
 
         .header {
+            width: 100%;
+            max-width: 900px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
             gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 24px;
         }
 
         .title {
@@ -62,11 +68,29 @@
             font-weight: 600;
             background: #292c35;
             color: #e5e7eb;
+            transition: background 0.2s;
+        }
+
+        .upload-label:hover {
+            background: #383b46;
         }
 
         .file-name {
             font-size: 12px;
             color: #9ca3af;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Preview */
+
+        .preview-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .preview {
@@ -74,7 +98,8 @@
             background: #050505;
             overflow: hidden;
             border-radius: 10px;
-            width: 100%;
+            width: min(600px, 90vw);
+            max-height: 55vh;
             aspect-ratio: 16 / 9;
             display: flex;
             align-items: center;
@@ -103,11 +128,12 @@
             margin-bottom: 8px;
         }
 
-        .buttons {
+        /* Playback */
+
+        .playback {
             display: flex;
             gap: 10px;
-            margin: 14px 0;
-            flex-wrap: wrap;
+            margin-top: 20px;
         }
 
         button {
@@ -116,6 +142,15 @@
             border-radius: 8px;
             padding: 10px 16px;
             font-weight: 600;
+            transition: background 0.2s, transform 0.15s;
+        }
+
+        button:hover {
+            filter: brightness(1.15);
+        }
+
+        button:active {
+            transform: scale(0.97);
         }
 
         .primary {
@@ -128,58 +163,14 @@
             color: #e5e7eb;
         }
 
-        button:hover {
-            filter: brightness(1.15);
-        }
-
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
-        .panel {
-            background: #1b1d24;
-            border: 1px solid #30333d;
-            border-radius: 12px;
-            padding: 16px;
-        }
-
-        .label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .value {
-            color: #c4b5fd;
-            font-variant-numeric: tabular-nums;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            accent-color: #8b5cf6;
-            cursor: pointer;
-        }
-
-        .small {
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        .range-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 5px;
-        }
+        /* Progress */
 
         .progress-container {
-            height: 6px;
+            width: min(600px, 90vw);
+            height: 4px;
             background: #30333d;
             border-radius: 6px;
-            margin-top: 8px;
+            margin-top: 20px;
             overflow: hidden;
         }
 
@@ -189,15 +180,155 @@
             background: #8b5cf6;
         }
 
-        .footer {
+        #progress-text {
             font-size: 12px;
-            color: #777f8f;
-            margin-top: 14px;
+            color: #9ca3af;
+            margin-top: 6px;
         }
 
-        @media (max-width: 600px) {
-            .controls {
-                grid-template-columns: 1fr;
+        /* Bottom toolbar */
+
+        .toolbar-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(500px, calc(100vw - 30px));
+            z-index: 100;
+        }
+
+        .settings-panel {
+            background: #1b1d24;
+            border: 1px solid #383b46;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 10px;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            animation: panelOpen 0.18s ease;
+        }
+
+        .settings-panel.open {
+            display: block;
+        }
+
+        @keyframes panelOpen {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .panel-title {
+            font-weight: 650;
+            font-size: 14px;
+        }
+
+        .panel-value {
+            color: #c4b5fd;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .panel-close {
+            background: transparent;
+            color: #9ca3af;
+            font-size: 20px;
+            padding: 2px 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #8b5cf6;
+            cursor: pointer;
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 6px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            background: #1b1d24;
+            border: 1px solid #383b46;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .tool-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            background: transparent;
+            color: #9ca3af;
+            border-radius: 10px;
+            width: 75px;
+            height: 60px;
+            padding: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .tool-button:hover {
+            background: #292c35;
+            color: white;
+        }
+
+        .tool-button.active {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .tool-icon {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .tool-label {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 500px) {
+            .app {
+                padding: 15px;
+                padding-bottom: 150px;
+            }
+
+            .header {
+                align-items: flex-start;
+            }
+
+            .toolbar {
+                gap: 2px;
+            }
+
+            .tool-button {
+                width: 65px;
+            }
+
+            .preview {
+                width: 95vw;
             }
         }
     </style>
@@ -207,6 +338,7 @@
 
 <div class="app">
 
+    <!-- Header -->
     <div class="header">
         <div>
             <div class="title">Zoom Animator</div>
@@ -227,21 +359,23 @@
     </div>
 
     <!-- Preview -->
-    <div class="preview" id="preview">
+    <div class="preview-wrapper">
+        <div class="preview" id="preview">
 
-        <img id="image" alt="Preview">
+            <img id="image" alt="Preview">
 
-        <div id="placeholder">
-            <div class="icon">＋</div>
-            <div>Upload an image to preview your animation</div>
+            <div id="placeholder">
+                <div class="icon">＋</div>
+                <div>Upload an image to preview your animation</div>
+            </div>
+
         </div>
-
     </div>
 
-    <!-- Buttons -->
-    <div class="buttons">
+    <!-- Playback buttons -->
+    <div class="playback">
         <button id="play" class="primary">
-            ▶ Play Animation
+            ▶ Play
         </button>
 
         <button id="reset" class="secondary">
@@ -249,84 +383,123 @@
         </button>
     </div>
 
-    <!-- Controls -->
-    <div class="controls">
-
-        <!-- Initial Zoom -->
-        <div class="panel">
-            <div class="label">
-                <span>Initial Zoom</span>
-                <span id="zoom-value" class="value">6.3×</span>
-            </div>
-
-            <input
-                id="zoom"
-                type="range"
-                min="1"
-                max="100"
-                step="0.1"
-                value="6.3"
-            >
-        </div>
-
-        <!-- Duration -->
-        <div class="panel">
-            <div class="label">
-                <span>Duration</span>
-                <span id="duration-value" class="value">7.7 sec</span>
-            </div>
-
-            <input
-                id="duration"
-                type="range"
-                min="0.5"
-                max="45"
-                step="0.1"
-                value="7.7"
-            >
-        </div>
-
-        <!-- Focus Height -->
-        <div class="panel">
-            <div class="label">
-                <span>Focus Height</span>
-                <span id="focus-value" class="value">0.35</span>
-            </div>
-
-            <input
-                id="focus"
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value="0.35"
-            >
-
-            <div class="small range-labels">
-                <span>Top</span>
-                <span>Bottom</span>
-            </div>
-        </div>
-
-        <!-- Progress -->
-        <div class="panel">
-            <div style="font-weight:600;margin-bottom:5px;">
-                Animation Progress
-            </div>
-
-            <div id="progress-text" class="value">
-                0%
-            </div>
-
-            <div class="progress-container">
-                <div id="progress"></div>
-            </div>
-        </div>
-
+    <!-- Progress -->
+    <div class="progress-container">
+        <div id="progress"></div>
     </div>
 
-    <div class="footer">
-        Scale = Initial Zoom ^ (1 − Progress)
+    <div id="progress-text">
+        0%
+    </div>
+
+</div>
+
+<!-- Bottom toolbar -->
+<div class="toolbar-container">
+
+    <!-- Zoom Panel -->
+    <div class="settings-panel" id="panel-zoom">
+        <div class="panel-header">
+            <span class="panel-title">Initial Zoom</span>
+            <span class="panel-value" id="zoom-value">6.3×</span>
+        </div>
+
+        <input
+            id="zoom"
+            type="range"
+            min="1"
+            max="100"
+            step="0.1"
+            value="6.3"
+        >
+    </div>
+
+    <!-- Duration Panel -->
+    <div class="settings-panel" id="panel-duration">
+        <div class="panel-header">
+            <span class="panel-title">Duration</span>
+            <span class="panel-value" id="duration-value">7.7 sec</span>
+        </div>
+
+        <input
+            id="duration"
+            type="range"
+            min="0.5"
+            max="45"
+            step="0.1"
+            value="7.7"
+        >
+    </div>
+
+    <!-- Horizontal Focus Panel -->
+    <div class="settings-panel" id="panel-horizontal">
+        <div class="panel-header">
+            <span class="panel-title">Horizontal Focus</span>
+            <span class="panel-value" id="horizontal-value">0.50</span>
+        </div>
+
+        <input
+            id="horizontal"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.5"
+        >
+
+        <div class="range-labels">
+            <span>Left</span>
+            <span>Center</span>
+            <span>Right</span>
+        </div>
+    </div>
+
+    <!-- Vertical Focus Panel -->
+    <div class="settings-panel" id="panel-vertical">
+        <div class="panel-header">
+            <span class="panel-title">Vertical Focus</span>
+            <span class="panel-value" id="vertical-value">0.35</span>
+        </div>
+
+        <input
+            id="vertical"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.35"
+        >
+
+        <div class="range-labels">
+            <span>Top</span>
+            <span>Center</span>
+            <span>Bottom</span>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+
+        <button class="tool-button" data-panel="zoom">
+            <span class="tool-icon">⌕</span>
+            <span class="tool-label">Zoom</span>
+        </button>
+
+        <button class="tool-button" data-panel="duration">
+            <span class="tool-icon">◷</span>
+            <span class="tool-label">Duration</span>
+        </button>
+
+        <button class="tool-button" data-panel="horizontal">
+            <span class="tool-icon">↔</span>
+            <span class="tool-label">Horizontal</span>
+        </button>
+
+        <button class="tool-button" data-panel="vertical">
+            <span class="tool-icon">↕</span>
+            <span class="tool-label">Vertical</span>
+        </button>
+
     </div>
 
 </div>
@@ -338,9 +511,12 @@
     const placeholder = document.getElementById("placeholder");
 
     const fileInput = document.getElementById("file");
+
     const zoomInput = document.getElementById("zoom");
     const durationInput = document.getElementById("duration");
-    const focusInput = document.getElementById("focus");
+
+    const horizontalInput = document.getElementById("horizontal");
+    const verticalInput = document.getElementById("vertical");
 
     const playButton = document.getElementById("play");
     const resetButton = document.getElementById("reset");
@@ -351,6 +527,8 @@
     // Settings
     let initialZoom = 6.3;
     let duration = 7.7;
+
+    let focusX = 0.5;
     let focusY = 0.35;
 
     // Animation state
@@ -359,14 +537,61 @@
     let imageLoaded = false;
     let currentProgress = 0;
 
-    // Image URL
     let uploadedUrl = null;
 
-    // Update slider labels
+    // Toolbar
+    const toolbarButtons =
+        document.querySelectorAll(".tool-button");
+
+    const settingsPanels =
+        document.querySelectorAll(".settings-panel");
+
+    let activePanel = null;
+
+    // Toggle toolbar panels
+    toolbarButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const panelName = button.dataset.panel;
+
+            // Clicking the currently open panel closes it
+            if (activePanel === panelName) {
+                closePanels();
+                return;
+            }
+
+            // Close existing panel
+            closePanels();
+
+            // Open selected panel
+            activePanel = panelName;
+
+            document
+                .getElementById("panel-" + panelName)
+                .classList.add("open");
+
+            button.classList.add("active");
+        });
+    });
+
+    function closePanels() {
+        activePanel = null;
+
+        settingsPanels.forEach(panel => {
+            panel.classList.remove("open");
+        });
+
+        toolbarButtons.forEach(button => {
+            button.classList.remove("active");
+        });
+    }
+
+    // Update labels
     function updateLabels() {
         initialZoom = Number(zoomInput.value);
         duration = Number(durationInput.value);
-        focusY = Number(focusInput.value);
+
+        focusX = Number(horizontalInput.value);
+        focusY = Number(verticalInput.value);
 
         document.getElementById("zoom-value").textContent =
             initialZoom.toFixed(1) + "×";
@@ -374,11 +599,14 @@
         document.getElementById("duration-value").textContent =
             duration.toFixed(1) + " sec";
 
-        document.getElementById("focus-value").textContent =
+        document.getElementById("horizontal-value").textContent =
+            focusX.toFixed(2);
+
+        document.getElementById("vertical-value").textContent =
             focusY.toFixed(2);
     }
 
-    // Render animation frame
+    // Render
     function render(progress) {
         if (!imageLoaded) return;
 
@@ -386,28 +614,28 @@
 
         currentProgress = progress;
 
-        // Brushcue zoom formula
+        // Zoom calculation
         const scale = Math.pow(
             initialZoom,
             1 - progress
         );
 
-        // Image bounds
+        // Preview dimensions
         const width = preview.clientWidth;
         const height = preview.clientHeight;
 
-        // Translation
+        // Horizontal and vertical translation
         const translateX =
-            (width * (1 - scale)) / 2;
+            width * focusX * (1 - scale);
 
         const translateY =
             height * focusY * (1 - scale);
 
-        // Apply transform
+        // Apply transformation
         image.style.transform =
             `translate(${translateX}px, ${translateY}px) scale(${scale})`;
 
-        // Progress UI
+        // Progress
         progressBar.style.width =
             (progress * 100) + "%";
 
@@ -423,13 +651,13 @@
         }
     }
 
-    // Reset
+    // Reset animation
     function resetAnimation() {
         stopAnimation();
 
         startTime = null;
 
-        playButton.textContent = "▶ Play Animation";
+        playButton.textContent = "▶ Play";
 
         render(0);
     }
@@ -454,12 +682,11 @@
         } else {
             animationFrame = null;
 
-            playButton.textContent =
-                "↻ Replay Animation";
+            playButton.textContent = "↻ Replay";
         }
     }
 
-    // Play
+    // Play animation
     playButton.addEventListener("click", () => {
         if (!imageLoaded) {
             fileInput.click();
@@ -484,12 +711,11 @@
     });
 
     // Upload image
-    fileInput.addEventListener("change", (event) => {
+    fileInput.addEventListener("change", event => {
         const file = event.target.files[0];
 
         if (!file) return;
 
-        // Clean up old image URL
         if (uploadedUrl) {
             URL.revokeObjectURL(uploadedUrl);
         }
@@ -504,7 +730,6 @@
 
             placeholder.style.display = "none";
 
-            // Match preview aspect ratio to image
             preview.style.aspectRatio =
                 `${image.naturalWidth}/${image.naturalHeight}`;
 
@@ -518,11 +743,15 @@
     });
 
     // Slider updates
-    [zoomInput, durationInput, focusInput].forEach(input => {
+    [
+        zoomInput,
+        durationInput,
+        horizontalInput,
+        verticalInput
+    ].forEach(input => {
         input.addEventListener("input", () => {
             updateLabels();
 
-            // Update preview if not currently playing
             if (animationFrame === null) {
                 render(currentProgress);
             }
