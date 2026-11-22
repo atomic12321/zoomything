@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zoomything</title>
+    <title>Brushcue Zoom Animator</title>
 
     <style>
         * {
@@ -381,6 +381,10 @@
         <button id="reset" class="secondary">
             ↺ Reset
         </button>
+
+        <button id="save" class="primary">
+            ↓ Save WebM
+        </button>
     </div>
 
     <!-- Progress -->
@@ -520,6 +524,7 @@
 
     const playButton = document.getElementById("play");
     const resetButton = document.getElementById("reset");
+    const saveButton = document.getElementById("save");
 
     const progressBar = document.getElementById("progress");
     const progressText = document.getElementById("progress-text");
@@ -708,6 +713,130 @@
     // Reset
     resetButton.addEventListener("click", () => {
         resetAnimation();
+    });
+
+    // Save animation as a WebM video
+    saveButton.addEventListener("click", () => {
+        if (!imageLoaded) {
+            fileInput.click();
+            return;
+        }
+
+        if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+            alert("Your browser does not support WebM recording. Try the latest version of Chrome or Edge.");
+            return;
+        }
+
+        stopAnimation();
+        startTime = null;
+        updateLabels();
+
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+
+        const context = canvas.getContext("2d");
+        const stream = canvas.captureStream(30);
+
+        const mimeTypes = [
+            "video/webm;codecs=vp9",
+            "video/webm;codecs=vp8",
+            "video/webm"
+        ];
+
+        const mimeType = mimeTypes.find(type =>
+            MediaRecorder.isTypeSupported(type)
+        );
+
+        if (!mimeType) {
+            alert("This browser cannot create a WebM video.");
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+
+        let recorder;
+
+        try {
+            recorder = new MediaRecorder(stream, { mimeType });
+        } catch (error) {
+            alert("Could not start video recording: " + error.message);
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+
+        const chunks = [];
+        const exportDuration = duration;
+        let exportStartTime = null;
+        let exportFrame = null;
+
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving…";
+        playButton.textContent = "Exporting…";
+
+        recorder.addEventListener("dataavailable", event => {
+            if (event.data && event.data.size > 0) {
+                chunks.push(event.data);
+            }
+        });
+
+        recorder.addEventListener("stop", () => {
+            const blob = new Blob(chunks, { type: "video/webm" });
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const originalName = fileInput.files[0]?.name || "zoom-animation";
+            const baseName = originalName.replace(/\.[^/.]+$/, "");
+
+            link.href = downloadUrl;
+            link.download = baseName + "-zoom.webm";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+            stream.getTracks().forEach(track => track.stop());
+
+            saveButton.disabled = false;
+            saveButton.textContent = "↓ Save WebM";
+            playButton.textContent = "↻ Replay";
+            render(1);
+        });
+
+        function drawExportFrame(progress) {
+            const scale = Math.pow(initialZoom, 1 - progress);
+            const translateX = canvas.width * focusX * (1 - scale);
+            const translateY = canvas.height * focusY * (1 - scale);
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.save();
+            context.translate(translateX, translateY);
+            context.scale(scale, scale);
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            context.restore();
+
+            render(progress);
+        }
+
+        function recordFrame(timestamp) {
+            if (exportStartTime === null) {
+                exportStartTime = timestamp;
+            }
+
+            const elapsed = (timestamp - exportStartTime) / 1000;
+            const progress = Math.min(1, elapsed / exportDuration);
+
+            drawExportFrame(progress);
+
+            if (progress < 1) {
+                exportFrame = requestAnimationFrame(recordFrame);
+            } else {
+                exportFrame = null;
+                recorder.stop();
+            }
+        }
+
+        drawExportFrame(0);
+        recorder.start();
+        exportFrame = requestAnimationFrame(recordFrame);
     });
 
     // Upload image
