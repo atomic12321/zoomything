@@ -383,7 +383,7 @@
         </button>
 
         <button id="save" class="primary">
-            ↓ Save WebM
+            ↓ Save Video
         </button>
     </div>
 
@@ -715,15 +715,15 @@
         resetAnimation();
     });
 
-    // Save animation as a WebM video
-    saveButton.addEventListener("click", () => {
+    // Save animation in an iPhone Photos-compatible format when supported
+    saveButton.addEventListener("click", async () => {
         if (!imageLoaded) {
             fileInput.click();
             return;
         }
 
         if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
-            alert("Your browser does not support WebM recording. Try the latest version of Chrome or Edge.");
+            alert("Your browser does not support video recording.");
             return;
         }
 
@@ -731,28 +731,40 @@
         startTime = null;
         updateLabels();
 
-        const canvas = document.createElement("canvas");
-        canvas.width = image.naturalWidth;
-        canvas.height = image.naturalHeight;
+        const isIOS =
+            /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-        const context = canvas.getContext("2d");
-        const stream = canvas.captureStream(30);
-
-        const mimeTypes = [
-            "video/webm;codecs=vp9",
-            "video/webm;codecs=vp8",
-            "video/webm"
-        ];
+        const mimeTypes = isIOS
+            ? [
+                "video/mp4;codecs=h264",
+                "video/mp4"
+              ]
+            : [
+                "video/webm;codecs=vp9",
+                "video/webm;codecs=vp8",
+                "video/webm"
+              ];
 
         const mimeType = mimeTypes.find(type =>
             MediaRecorder.isTypeSupported(type)
         );
 
         if (!mimeType) {
-            alert("This browser cannot create a WebM video.");
-            stream.getTracks().forEach(track => track.stop());
+            if (isIOS) {
+                alert("This version of Safari does not support exporting MP4 video directly. Try updating iOS/Safari.");
+            } else {
+                alert("This browser cannot create a supported video file.");
+            }
             return;
         }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+
+        const context = canvas.getContext("2d");
+        const stream = canvas.captureStream(30);
 
         let recorder;
 
@@ -779,24 +791,49 @@
             }
         });
 
-        recorder.addEventListener("stop", () => {
-            const blob = new Blob(chunks, { type: "video/webm" });
-            const downloadUrl = URL.createObjectURL(blob);
-            const link = document.createElement("a");
+        recorder.addEventListener("stop", async () => {
+            const actualType = recorder.mimeType || mimeType;
+            const blob = new Blob(chunks, { type: actualType });
+            const extension = actualType.includes("mp4") ? "mp4" : "webm";
             const originalName = fileInput.files[0]?.name || "zoom-animation";
             const baseName = originalName.replace(/\.[^/.]+$/, "");
+            const filename = baseName + "-zoom." + extension;
 
-            link.href = downloadUrl;
-            link.download = baseName + "-zoom.webm";
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-
-            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
             stream.getTracks().forEach(track => track.stop());
 
+            try {
+                const file = new File([blob], filename, { type: blob.type });
+
+                // iOS share sheet: choose "Save Video" to add it to Photos.
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: filename
+                    });
+                } else {
+                    // Regular download fallback for browsers without file sharing.
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+
+                    if (isIOS && extension !== "mp4") {
+                        alert("This browser exported WebM, which iPhone Photos may not accept. Try Safari on an updated iOS version for MP4 export.");
+                    }
+                }
+            } catch (error) {
+                // User cancelling the share sheet is not an export failure.
+                if (error.name !== "AbortError") {
+                    alert("Couldn't share the video. The video was exported, but sharing failed.");
+                }
+            }
+
             saveButton.disabled = false;
-            saveButton.textContent = "↓ Save WebM";
+            saveButton.textContent = "↓ Save Video";
             playButton.textContent = "↻ Replay";
             render(1);
         });
