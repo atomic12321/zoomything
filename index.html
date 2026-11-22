@@ -1,773 +1,285 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brushcue Zoom Animator</title>
+    <title>Zoom Animation</title>
 
     <style>
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
         }
 
         body {
-            background: #111318;
-            color: #e5e7eb;
-            font-family: system-ui, sans-serif;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .app {
-            width: 100%;
-            min-height: 100vh;
+            margin: 0;
+            background: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 24px;
-            padding-bottom: 150px;
-        }
-
-        .header {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .title {
-            font-size: 22px;
-            font-weight: 750;
-        }
-
-        .subtitle {
-            font-size: 13px;
-            color: #9ca3af;
-        }
-
-        .upload {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .upload-label {
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            background: #292c35;
-            color: #e5e7eb;
-            transition: background 0.2s;
-        }
-
-        .upload-label:hover {
-            background: #383b46;
-        }
-
-        .file-name {
-            font-size: 12px;
-            color: #9ca3af;
-            max-width: 180px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* Preview */
-
-        .preview-wrapper {
-            width: 100%;
-            display: flex;
             justify-content: center;
-            align-items: center;
+            overflow: hidden;
         }
 
         .preview {
             position: relative;
-            background: #050505;
-            overflow: hidden;
-            border-radius: 10px;
             width: min(600px, 90vw);
-            max-height: 55vh;
             aspect-ratio: 16 / 9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            max-height: 55vh;
+            background: black;
+            overflow: hidden;
+            border-radius: 12px;
         }
 
         #image {
             position: absolute;
             width: 100%;
             height: 100%;
-            object-fit: fill;
+            object-fit: contain;
             top: 0;
             left: 0;
             transform-origin: 0 0;
             display: none;
         }
 
-        #placeholder {
-            color: #737783;
-            text-align: center;
-            padding: 20px;
-        }
-
-        #placeholder .icon {
-            font-size: 40px;
-            margin-bottom: 8px;
-        }
-
-        /* Playback */
-
-        .playback {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        button {
-            cursor: pointer;
-            border: 0;
-            border-radius: 8px;
-            padding: 10px 16px;
-            font-weight: 600;
-            transition: background 0.2s, transform 0.15s;
-        }
-
-        button:hover {
-            filter: brightness(1.15);
-        }
-
-        button:active {
-            transform: scale(0.97);
-        }
-
-        .primary {
-            background: #8b5cf6;
-            color: white;
-        }
-
-        .secondary {
-            background: #292c35;
-            color: #e5e7eb;
-        }
-
-        /* Progress */
-
-        .progress-container {
-            width: min(600px, 90vw);
-            height: 4px;
-            background: #30333d;
-            border-radius: 6px;
-            margin-top: 20px;
-            overflow: hidden;
-        }
-
-        #progress {
-            width: 0%;
-            height: 100%;
-            background: #8b5cf6;
-        }
-
-        #progress-text {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-top: 6px;
-        }
-
-        /* Bottom toolbar */
-
-        .toolbar-container {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: min(500px, calc(100vw - 30px));
-            z-index: 100;
-        }
-
-        .settings-panel {
-            background: #1b1d24;
-            border: 1px solid #383b46;
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 10px;
-            display: none;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-            animation: panelOpen 0.18s ease;
-        }
-
-        .settings-panel.open {
-            display: block;
-        }
-
-        @keyframes panelOpen {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-
-        .panel-title {
-            font-weight: 650;
-            font-size: 14px;
-        }
-
-        .panel-value {
-            color: #c4b5fd;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .panel-close {
-            background: transparent;
-            color: #9ca3af;
-            font-size: 20px;
-            padding: 2px 8px;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            accent-color: #8b5cf6;
-            cursor: pointer;
-        }
-
-        .range-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #9ca3af;
-            margin-top: 6px;
+        #upload {
+            margin-bottom: 20px;
         }
 
         .toolbar {
+            position: fixed;
+            bottom: 25px;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-            padding: 8px;
-            background: #1b1d24;
-            border: 1px solid #383b46;
+            gap: 10px;
+            background: #222;
+            padding: 10px;
             border-radius: 14px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .tool {
+            position: relative;
         }
 
         .tool-button {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            background: transparent;
-            color: #9ca3af;
+            width: 45px;
+            height: 45px;
+            background: #333;
+            border: none;
             border-radius: 10px;
-            width: 75px;
-            height: 60px;
-            padding: 6px;
-            transition: background 0.2s, color 0.2s;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+            transition: background 0.2s;
         }
 
         .tool-button:hover {
-            background: #292c35;
-            color: white;
+            background: #444;
         }
 
-        .tool-button.active {
-            background: #8b5cf6;
-            color: white;
+        .panel {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 15px;
+            display: none;
         }
 
-        .tool-icon {
-            font-size: 20px;
-            line-height: 1;
+        .panel.open {
+            display: block;
         }
 
-        .tool-label {
-            font-size: 11px;
-            font-weight: 600;
+        .panel label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
         }
 
-        @media (max-width: 500px) {
-            .app {
-                padding: 15px;
-                padding-bottom: 150px;
-            }
+        .panel input {
+            width: 100%;
+        }
 
-            .header {
-                align-items: flex-start;
-            }
+        .value {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 13px;
+            color: #aaa;
+        }
 
-            .toolbar {
-                gap: 2px;
-            }
-
-            .tool-button {
-                width: 65px;
-            }
-
-            .preview {
-                width: 95vw;
-            }
+        button {
+            font-family: inherit;
         }
     </style>
 </head>
 
 <body>
 
-<div class="app">
+    <input type="file" id="upload" accept="image/*">
 
-    <!-- Header -->
-    <div class="header">
-        <div>
-            <div class="title">Zoom Animator</div>
-            <div class="subtitle">Brushcue-style image zoom</div>
-        </div>
-
-        <div class="upload">
-            <label for="file" class="upload-label">
-                Upload Image
-            </label>
-
-            <input id="file" type="file" accept="image/*">
-
-            <span id="file-name" class="file-name">
-                No image selected
-            </span>
-        </div>
+    <div class="preview">
+        <img id="image">
     </div>
 
-    <!-- Preview -->
-    <div class="preview-wrapper">
-        <div class="preview" id="preview">
-
-            <img id="image" alt="Preview">
-
-            <div id="placeholder">
-                <div class="icon">＋</div>
-                <div>Upload an image to preview your animation</div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Playback buttons -->
-    <div class="playback">
-        <button id="play" class="primary">
-            ▶ Play
-        </button>
-
-        <button id="reset" class="secondary">
-            ↺ Reset
-        </button>
-    </div>
-
-    <!-- Progress -->
-    <div class="progress-container">
-        <div id="progress"></div>
-    </div>
-
-    <div id="progress-text">
-        0%
-    </div>
-
-</div>
-
-<!-- Bottom toolbar -->
-<div class="toolbar-container">
-
-    <!-- Zoom Panel -->
-    <div class="settings-panel" id="panel-zoom">
-        <div class="panel-header">
-            <span class="panel-title">Initial Zoom</span>
-            <span class="panel-value" id="zoom-value">6.3×</span>
-        </div>
-
-        <input
-            id="zoom"
-            type="range"
-            min="1"
-            max="100"
-            step="0.1"
-            value="6.3"
-        >
-    </div>
-
-    <!-- Duration Panel -->
-    <div class="settings-panel" id="panel-duration">
-        <div class="panel-header">
-            <span class="panel-title">Duration</span>
-            <span class="panel-value" id="duration-value">7.7 sec</span>
-        </div>
-
-        <input
-            id="duration"
-            type="range"
-            min="0.5"
-            max="45"
-            step="0.1"
-            value="7.7"
-        >
-    </div>
-
-    <!-- Horizontal Focus Panel -->
-    <div class="settings-panel" id="panel-horizontal">
-        <div class="panel-header">
-            <span class="panel-title">Horizontal Focus</span>
-            <span class="panel-value" id="horizontal-value">0.50</span>
-        </div>
-
-        <input
-            id="horizontal"
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value="0.5"
-        >
-
-        <div class="range-labels">
-            <span>Left</span>
-            <span>Center</span>
-            <span>Right</span>
-        </div>
-    </div>
-
-    <!-- Vertical Focus Panel -->
-    <div class="settings-panel" id="panel-vertical">
-        <div class="panel-header">
-            <span class="panel-title">Vertical Focus</span>
-            <span class="panel-value" id="vertical-value">0.35</span>
-        </div>
-
-        <input
-            id="vertical"
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value="0.35"
-        >
-
-        <div class="range-labels">
-            <span>Top</span>
-            <span>Center</span>
-            <span>Bottom</span>
-        </div>
-    </div>
-
-    <!-- Toolbar -->
     <div class="toolbar">
 
-        <button class="tool-button" data-panel="zoom">
-            <span class="tool-icon">⌕</span>
-            <span class="tool-label">Zoom</span>
-        </button>
+        <div class="tool">
+            <button class="tool-button" onclick="togglePanel('zoom')" title="Zoom">⌕</button>
+            <div class="panel" id="zoom">
+                <label>
+                    Initial Zoom
+                    <input type="range" id="initialZoom" min="1" max="100" step="0.1" value="6.3">
+                    <div class="value" id="zoomValue">6.3</div>
+                </label>
+            </div>
+        </div>
 
-        <button class="tool-button" data-panel="duration">
-            <span class="tool-icon">◷</span>
-            <span class="tool-label">Duration</span>
-        </button>
+        <div class="tool">
+            <button class="tool-button" onclick="togglePanel('duration')" title="Duration">◷</button>
+            <div class="panel" id="duration">
+                <label>
+                    Duration
+                    <input type="range" id="durationInput" min="0.5" max="45" step="0.1" value="7.7">
+                    <div class="value" id="durationValue">7.7s</div>
+                </label>
+            </div>
+        </div>
 
-        <button class="tool-button" data-panel="horizontal">
-            <span class="tool-icon">↔</span>
-            <span class="tool-label">Horizontal</span>
-        </button>
+        <div class="tool">
+            <button class="tool-button" onclick="togglePanel('horizontal')" title="Horizontal Focus">↔</button>
+            <div class="panel" id="horizontal">
+                <label>
+                    Focus X
+                    <input type="range" id="focusX" min="0" max="1" step="0.01" value="0.5">
+                    <div class="value" id="focusXValue">0.50</div>
+                </label>
+            </div>
+        </div>
 
-        <button class="tool-button" data-panel="vertical">
-            <span class="tool-icon">↕</span>
-            <span class="tool-label">Vertical</span>
-        </button>
+        <div class="tool">
+            <button class="tool-button" onclick="togglePanel('vertical')" title="Vertical Focus">↕</button>
+            <div class="panel" id="vertical">
+                <label>
+                    Focus Y
+                    <input type="range" id="focusY" min="0" max="1" step="0.01" value="0.35">
+                    <div class="value" id="focusYValue">0.35</div>
+                </label>
+            </div>
+        </div>
 
     </div>
 
-</div>
+    <script>
+        const image = document.getElementById("image");
+        const upload = document.getElementById("upload");
 
-<script>
-    // Elements
-    const image = document.getElementById("image");
-    const preview = document.getElementById("preview");
-    const placeholder = document.getElementById("placeholder");
+        const initialZoomInput = document.getElementById("initialZoom");
+        const durationInput = document.getElementById("durationInput");
+        const focusXInput = document.getElementById("focusX");
+        const focusYInput = document.getElementById("focusY");
 
-    const fileInput = document.getElementById("file");
+        const zoomValue = document.getElementById("zoomValue");
+        const durationValue = document.getElementById("durationValue");
+        const focusXValue = document.getElementById("focusXValue");
+        const focusYValue = document.getElementById("focusYValue");
 
-    const zoomInput = document.getElementById("zoom");
-    const durationInput = document.getElementById("duration");
+        let animationStart = null;
+        let animationFrame = null;
 
-    const horizontalInput = document.getElementById("horizontal");
-    const verticalInput = document.getElementById("vertical");
+        function togglePanel(id) {
+            const panels = document.querySelectorAll(".panel");
 
-    const playButton = document.getElementById("play");
-    const resetButton = document.getElementById("reset");
-
-    const progressBar = document.getElementById("progress");
-    const progressText = document.getElementById("progress-text");
-
-    // Settings
-    let initialZoom = 6.3;
-    let duration = 7.7;
-
-    let focusX = 0.5;
-    let focusY = 0.35;
-
-    // Animation state
-    let animationFrame = null;
-    let startTime = null;
-    let imageLoaded = false;
-    let currentProgress = 0;
-
-    let uploadedUrl = null;
-
-    // Toolbar
-    const toolbarButtons =
-        document.querySelectorAll(".tool-button");
-
-    const settingsPanels =
-        document.querySelectorAll(".settings-panel");
-
-    let activePanel = null;
-
-    // Toggle toolbar panels
-    toolbarButtons.forEach(button => {
-        button.addEventListener("click", () => {
-            const panelName = button.dataset.panel;
-
-            // Clicking the currently open panel closes it
-            if (activePanel === panelName) {
-                closePanels();
-                return;
-            }
-
-            // Close existing panel
-            closePanels();
-
-            // Open selected panel
-            activePanel = panelName;
-
-            document
-                .getElementById("panel-" + panelName)
-                .classList.add("open");
-
-            button.classList.add("active");
-        });
-    });
-
-    function closePanels() {
-        activePanel = null;
-
-        settingsPanels.forEach(panel => {
-            panel.classList.remove("open");
-        });
-
-        toolbarButtons.forEach(button => {
-            button.classList.remove("active");
-        });
-    }
-
-    // Update labels
-    function updateLabels() {
-        initialZoom = Number(zoomInput.value);
-        duration = Number(durationInput.value);
-
-        focusX = Number(horizontalInput.value);
-        focusY = Number(verticalInput.value);
-
-        document.getElementById("zoom-value").textContent =
-            initialZoom.toFixed(1) + "×";
-
-        document.getElementById("duration-value").textContent =
-            duration.toFixed(1) + " sec";
-
-        document.getElementById("horizontal-value").textContent =
-            focusX.toFixed(2);
-
-        document.getElementById("vertical-value").textContent =
-            focusY.toFixed(2);
-    }
-
-    // Render
-    function render(progress) {
-        if (!imageLoaded) return;
-
-        progress = Math.max(0, Math.min(1, progress));
-
-        currentProgress = progress;
-
-        // Zoom calculation
-        const scale = Math.pow(
-            initialZoom,
-            1 - progress
-        );
-
-        // Preview dimensions
-        const width = preview.clientWidth;
-        const height = preview.clientHeight;
-
-        // Horizontal and vertical translation
-        const translateX =
-            width * focusX * (1 - scale);
-
-        const translateY =
-            height * focusY * (1 - scale);
-
-        // Apply transformation
-        image.style.transform =
-            `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-
-        // Progress
-        progressBar.style.width =
-            (progress * 100) + "%";
-
-        progressText.textContent =
-            Math.round(progress * 100) + "%";
-    }
-
-    // Stop animation
-    function stopAnimation() {
-        if (animationFrame !== null) {
-            cancelAnimationFrame(animationFrame);
-            animationFrame = null;
-        }
-    }
-
-    // Reset animation
-    function resetAnimation() {
-        stopAnimation();
-
-        startTime = null;
-
-        playButton.textContent = "▶ Play";
-
-        render(0);
-    }
-
-    // Animation loop
-    function animate(timestamp) {
-        if (startTime === null) {
-            startTime = timestamp;
+            panels.forEach(panel => {
+                if (panel.id === id) {
+                    panel.classList.toggle("open");
+                } else {
+                    panel.classList.remove("open");
+                }
+            });
         }
 
-        const elapsed =
-            (timestamp - startTime) / 1000;
+        upload.addEventListener("change", function(event) {
+            const file = event.target.files[0];
 
-        const progress =
-            Math.min(1, elapsed / duration);
+            if (!file) return;
 
-        render(progress);
+            const url = URL.createObjectURL(file);
 
-        if (progress < 1) {
-            animationFrame =
-                requestAnimationFrame(animate);
-        } else {
-            animationFrame = null;
-
-            playButton.textContent = "↻ Replay";
-        }
-    }
-
-    // Play animation
-    playButton.addEventListener("click", () => {
-        if (!imageLoaded) {
-            fileInput.click();
-            return;
-        }
-
-        stopAnimation();
-
-        startTime = null;
-
-        playButton.textContent = "Playing…";
-
-        render(0);
-
-        animationFrame =
-            requestAnimationFrame(animate);
-    });
-
-    // Reset
-    resetButton.addEventListener("click", () => {
-        resetAnimation();
-    });
-
-    // Upload image
-    fileInput.addEventListener("change", event => {
-        const file = event.target.files[0];
-
-        if (!file) return;
-
-        if (uploadedUrl) {
-            URL.revokeObjectURL(uploadedUrl);
-        }
-
-        uploadedUrl =
-            URL.createObjectURL(file);
-
-        image.onload = () => {
-            imageLoaded = true;
-
+            image.src = url;
             image.style.display = "block";
 
-            placeholder.style.display = "none";
-
-            preview.style.aspectRatio =
-                `${image.naturalWidth}/${image.naturalHeight}`;
-
-            document.getElementById("file-name").textContent =
-                file.name;
-
-            resetAnimation();
-        };
-
-        image.src = uploadedUrl;
-    });
-
-    // Slider updates
-    [
-        zoomInput,
-        durationInput,
-        horizontalInput,
-        verticalInput
-    ].forEach(input => {
-        input.addEventListener("input", () => {
-            updateLabels();
-
-            if (animationFrame === null) {
-                render(currentProgress);
-            }
+            image.onload = () => {
+                startAnimation();
+            };
         });
-    });
 
-    // Window resizing
-    window.addEventListener("resize", () => {
-        if (imageLoaded && animationFrame === null) {
-            render(currentProgress);
+        function startAnimation() {
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+            }
+
+            animationStart = null;
+
+            animationFrame = requestAnimationFrame(animate);
         }
-    });
 
-    // Initialize
-    updateLabels();
-</script>
+        function animate(timestamp) {
+            if (!animationStart) {
+                animationStart = timestamp;
+            }
+
+            const initialZoom = parseFloat(initialZoomInput.value);
+            const duration = parseFloat(durationInput.value);
+            const focusX = parseFloat(focusXInput.value);
+            const focusY = parseFloat(focusYInput.value);
+
+            const elapsed = (timestamp - animationStart) / 1000;
+            const progress = Math.min(1, elapsed / duration);
+
+            const scale = Math.pow(initialZoom, 1 - progress);
+
+            const bounds = image.parentElement.getBoundingClientRect();
+
+            const translateX = bounds.width * focusX * (1 - scale);
+            const translateY = bounds.height * focusY * (1 - scale);
+
+            image.style.transform = `
+                translate(${translateX}px, ${translateY}px)
+                scale(${scale})
+            `;
+
+            if (progress < 1) {
+                animationFrame = requestAnimationFrame(animate);
+            }
+        }
+
+        initialZoomInput.addEventListener("input", () => {
+            zoomValue.textContent = initialZoomInput.value;
+            startAnimation();
+        });
+
+        durationInput.addEventListener("input", () => {
+            durationValue.textContent = durationInput.value + "s";
+            startAnimation();
+        });
+
+        focusXInput.addEventListener("input", () => {
+            focusXValue.textContent = parseFloat(focusXInput.value).toFixed(2);
+            startAnimation();
+        });
+
+        focusYInput.addEventListener("input", () => {
+            focusYValue.textContent = parseFloat(focusYInput.value).toFixed(2);
+            startAnimation();
+        });
+
+    </script>
 
 </body>
 </html>
